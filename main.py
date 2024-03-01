@@ -1,8 +1,10 @@
 import asyncio
 
+from dobrotsen.logic import start
+
 
 async def main():
-    pass
+    await start()
 
 
 if __name__ == "__main__":

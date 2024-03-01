@@ -9,8 +9,9 @@ ua = UserAgent()
 link = 'https://dobrotsen.ru/catalog/'
 
 
-async def main():
-    async with aiohttp.ClientSession() as session:
+async def start():
+    cookies = {"CITY_ID": '181830', 'CITY_CONFIRMED': 'Y', }
+    async with aiohttp.ClientSession(cookies=cookies) as session:
         async with session.get(url=link,
                                headers={
                                    'user-agent': ua.random
@@ -21,10 +22,8 @@ async def main():
     block = soup.find_all(name='a', attrs={'class': 'catalog-block-title'})
     categories = [item.getText().strip() for item in block if item.getText().strip() != '']
     links = [item.get('href') for item in block if item.get('href') != '']
+    city = soup.find(name='div', attrs={'class': 'header-location js-popup-open'})
     d = {k: v for k, v in zip(categories, links)}
     for k, v in d.items():
         print(f'{k}: {v}')
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    print(city.getText().strip())
