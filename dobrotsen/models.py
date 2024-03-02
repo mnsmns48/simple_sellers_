@@ -13,7 +13,8 @@ class Base(DeclarativeBase):
 class Dobrotsen(Base):
     id: Mapped[int] = mapped_column(primary_key=True, unique=True, autoincrement=True)
     parent: Mapped[int]
-    title: Mapped[str]
-    link: Mapped[str]
-    price: Mapped[float]
-    image: Mapped[Optional[str]]
+    title: Mapped[str] = mapped_column(primary_key=True, unique=True)
+    link: Mapped[str] = mapped_column(primary_key=True, unique=True)
+    price: Mapped[Optional[float]]
+    image_site: Mapped[Optional[str]]
+    image_bot: Mapped[Optional[str]]
