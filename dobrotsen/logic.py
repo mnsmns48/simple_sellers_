@@ -41,7 +41,7 @@ async def write_dobrotsen_menu(url):
             {
                 'parent': 0,
                 'title': key,
-                'link': value.get('link')
+                'link': f"https://dobrotsen.ru{value.get('link')}"
             }
         )
     async with db.scoped_session() as session:
@@ -62,25 +62,48 @@ async def write_dobrotsen_menu(url):
                     {
                         'parent': dict_parent.get(key),
                         'title': k,
-                        'link': v
+                        'link': f"https://dobrotsen.ru{v}"
                     }
                 )
         await write_data(session=session, table=Dobrotsen, data=values)
 
 
+async def bs_page_processing(page_html: str, parent: int):
+    result = list()
+    soup = BeautifulSoup(page_html, 'lxml')
+    images = soup.find_all(name='img', attrs={'itemprop': 'image'})
+    titles = soup.find_all(name='span', attrs={'itemprop': 'name'})
+    prices = soup.find_all(name='span', attrs={'itemprop': 'price'})
+    links = soup.find_all(name='a', attrs={'class': 'products-item-image'})
+    for image, title, price, link in zip(images, titles, prices, links):
+        result.append(
+            {
+                'parent': parent,
+                'title': title.getText(),
+                'link': f"https://dobrotsen.ru{link.get('href')}",
+                'price': float(price.getText().rsplit(' ', 1)[0].replace('\xa0', '')),
+                'image_site': f"https://dobrotsen.ru{image.get('src')}"
+            }
+        )
+    for line in result:
+        print(line)
+    if titles:
+        async with db.scoped_session() as session:
+            await write_data(session=session, table=Dobrotsen, data=result)
+
+
 async def pars_links():
-    # async with db.scoped_session() as session:
-    #     links = await get_links_from_db(session=session, table=Dobrotsen)
-    # links = list(links.keys())
-    links = ['/catalog/zamorozhennye-produkty/myaso/']
+    async with db.scoped_session() as session:
+        links = await get_links_from_db(session=session, table=Dobrotsen)
     cookies = {"CITY_ID": hidden.city_id, 'CITY_CONFIRMED': 'Y', }
-    async with aiohttp.ClientSession(cookies=cookies) as session:
-        for link in links:
-            async with session.get(url=f'https://dobrotsen.ru{link}',
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False),
+                                     cookies=cookies) as session:
+        for link, parent in links.items():
+            async with session.get(url=link,
                                    headers={
                                        'user-agent': ua.random
                                    }
                                    ) as response:
                 html_code = await response.text()
-                print(html_code)
-
+            await bs_page_processing(page_html=html_code, parent=parent)
+            await asyncio.sleep(1)

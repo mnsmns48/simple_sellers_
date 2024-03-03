@@ -6,7 +6,8 @@ ua = UserAgent()
 
 async def get_html(url: str, city_id: str) -> str:
     cookies = {"CITY_ID": city_id, 'CITY_CONFIRMED': 'Y', }
-    async with aiohttp.ClientSession(cookies=cookies) as session:
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False),
+                                     cookies=cookies) as session:
         async with session.get(url=url,
                                headers={
                                    'user-agent': ua.random

@@ -4,7 +4,7 @@ from dobrotsen.config import hidden
 from dobrotsen.crud import get_links_from_db
 from engine import db, create_db
 from dobrotsen.logic import write_dobrotsen_menu, pars_links
-from dobrotsen.models import Base, Dobrotsen
+from dobrotsen.models import Base
 
 
 async def main():
@@ -15,7 +15,7 @@ async def main():
         await asyncio.create_task(create_db())
         async with db.engine.begin() as async_connect:
             await async_connect.run_sync(Base.metadata.create_all)
-    # await write_dobrotsen_menu(url=hidden.url)
+    await write_dobrotsen_menu(url=hidden.url)
     await pars_links()
 
 
