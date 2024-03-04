@@ -1,7 +1,6 @@
 import asyncio
 from asyncpg import InvalidCatalogNameError
 from dobrotsen.config import hidden
-from dobrotsen.crud import get_links_from_db
 from engine import db, create_db
 from dobrotsen.logic import write_dobrotsen_menu, pars_links
 from dobrotsen.models import Base
