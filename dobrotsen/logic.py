@@ -83,7 +83,7 @@ async def bs_page_processing(page_html: str, parent: int):
                 'title': title.getText(),
                 'link': f"https://dobrotsen.ru{link.get('href')}",
                 'price': float(price.getText().rsplit(' ', 1)[0].replace('\xa0', '')),
-                'image_site': f"https://dobrotsen.ru{image.get('src')}"
+                'image': f"https://dobrotsen.ru{image.get('src')}"
             }
         )
     for line in result:
