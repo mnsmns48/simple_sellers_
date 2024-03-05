@@ -13,6 +13,7 @@ from func import get_html, ua
 
 
 async def write_dobrotsen_menu(url):
+    print('Configure menu')
     menu = dict()
     html_code = await get_html(url=url, city_id=hidden.city_id)
     soup = BeautifulSoup(html_code, 'lxml')
@@ -93,6 +94,7 @@ async def bs_page_processing(page_html: str, parent: int):
 
 
 async def pars_links():
+    print('Start parsing')
     async with db.scoped_session() as session:
         links = await get_links_from_db(session=session, table=Dobrotsen)
     cookies = {"CITY_ID": hidden.city_id, 'CITY_CONFIRMED': 'Y', }

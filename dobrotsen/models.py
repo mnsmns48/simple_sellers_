@@ -16,5 +16,4 @@ class Dobrotsen(Base):
     title: Mapped[str] = mapped_column(primary_key=True, unique=True)
     link: Mapped[str] = mapped_column(primary_key=True, unique=True)
     price: Mapped[Optional[float]]
-    image_site: Mapped[Optional[str]]
-    image_bot: Mapped[Optional[str]]
+    image: Mapped[Optional[str]]
