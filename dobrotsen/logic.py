@@ -52,10 +52,7 @@ async def write_dobrotsen_menu(url):
         result: Result = await session.execute(select(Dobrotsen).filter(Dobrotsen.parent == 0))
         r = result.scalars().all()
         dict_parent = {
-            k: v for k, v in zip(
-                [i.title for i in r],
-                [i.id for i in r]
-            )
+            k: v for k, v in zip([i.title for i in r], [i.id for i in r])
         }
         for key, value in menu.items():
             for k, v in value.get('child').items():
@@ -72,22 +69,20 @@ async def write_dobrotsen_menu(url):
 async def bs_page_processing(page_html: str, parent: int):
     result = list()
     soup = BeautifulSoup(page_html, 'lxml')
-    images = soup.find_all(name='img', attrs={'itemprop': 'image'})
-    titles = soup.find_all(name='span', attrs={'itemprop': 'name'})
+    titles = soup.find_all(name='div', attrs={'class': 'products-item-title'})
     prices = soup.find_all(name='span', attrs={'itemprop': 'price'})
     links = soup.find_all(name='a', attrs={'class': 'products-item-image'})
-    for image, title, price, link in zip(images, titles, prices, links):
+    images = soup.find_all(name='img', attrs={'itemprop': 'image'})
+    for title, price, link, image in zip(titles, prices, links, images):
         result.append(
             {
                 'parent': parent,
-                'title': title.getText(),
+                'title': title.getText().strip().strip(),
                 'link': f"https://dobrotsen.ru{link.get('href')}",
                 'price': float(price.getText().rsplit(' ', 1)[0].replace('\xa0', '')),
                 'image': f"https://dobrotsen.ru{image.get('src')}"
             }
         )
-    for line in result:
-        print(line)
     if titles:
         async with db.scoped_session() as session:
             await write_data(session=session, table=Dobrotsen, data=result)
@@ -98,9 +93,10 @@ async def pars_links():
     async with db.scoped_session() as session:
         links = await get_links_from_db(session=session, table=Dobrotsen)
     cookies = {"CITY_ID": hidden.city_id, 'CITY_CONFIRMED': 'Y', }
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False),
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False),
                                      cookies=cookies) as session:
         for link, parent in links.items():
+            print(link)
             async with session.get(url=link,
                                    headers={
                                        'user-agent': ua.random
