@@ -86,7 +86,6 @@ async def bs_page_processing(page_html: str, parent: int):
     if titles:
         async with db.scoped_session() as session:
             await write_data(session=session, table=Dobrotsen, data=result)
-    print('Database updated:', datetime.now())
 
 
 async def pars_links():
@@ -106,3 +105,4 @@ async def pars_links():
                 html_code = await response.text()
             await bs_page_processing(page_html=html_code, parent=parent)
             await asyncio.sleep(1)
+    print('Database updated:', datetime.now())

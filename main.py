@@ -24,20 +24,20 @@ async def refresh_db():
     await pars_links()
 
 
-async def main():
-    scheduler = AsyncIOScheduler()
-    trigger = CronTrigger(
-        year="*", month="*", day="*", hour="03", minute="29", second="0"
-    )
-    scheduler.add_job(func=refresh_db, trigger=trigger)
-    scheduler.start()
-    while True:
-        await asyncio.sleep(1000)
+# async def main():
+#     scheduler = AsyncIOScheduler()
+#     trigger = CronTrigger(
+#         year="*", month="*", day="*", hour="03", minute="29", second="0"
+#     )
+#     scheduler.add_job(func=refresh_db, trigger=trigger)
+#     scheduler.start()
+#     while True:
+#         await asyncio.sleep(1000)
 
 
 if __name__ == "__main__":
     try:
         print('script started', datetime.now())
-        asyncio.run(main())
+        asyncio.run(refresh_db())
     except (KeyboardInterrupt, SystemExit):
         print('script stopped')
