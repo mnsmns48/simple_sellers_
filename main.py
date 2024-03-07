@@ -1,5 +1,5 @@
 import asyncio
-
+from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from asyncpg import InvalidCatalogNameError
@@ -37,6 +37,7 @@ async def main():
 
 if __name__ == "__main__":
     try:
+        print('script started', datetime.now())
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        pass
+        print('script stopped')
