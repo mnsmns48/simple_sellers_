@@ -1,4 +1,4 @@
-from sqlalchemy import select, Result
+from sqlalchemy import select, Result, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
@@ -13,7 +13,10 @@ async def write_data(session: AsyncSession, table: DeclarativeAttributeIntercept
 
 async def get_links_from_db(session: AsyncSession, table: DeclarativeAttributeIntercept) -> dict:
     result_dict = dict()
-    query = select(table.link, table.id).filter(table.parent != 0)
+    subq1 = select(table.parent).scalar_subquery()
+    q1 = select(table.link, table.parent).filter(table.id.not_in(subq1))
+    q2 = select(table.link, table.parent).filter(table.parent != 0)
+    query = q1.union(q2).order_by(text("1"))
     result: Result = await session.execute(query)
     for line in result.fetchall():
         result_dict.update(
