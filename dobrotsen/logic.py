@@ -4,9 +4,9 @@ import aiohttp
 from bs4 import BeautifulSoup
 from sqlalchemy import Result, select
 
-from dobrotsen.config import hidden
+from dobrotsen.config_dobrotsen import hidden
 from dobrotsen.crud import write_data, get_links_from_db
-from dobrotsen.models import Dobrotsen
+from dobrotsen.models_dobrotsen import Dobrotsen
 
 from engine import db
 from func import get_html, ua

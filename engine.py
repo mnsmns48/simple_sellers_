@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import async_scoped_session, AsyncSession, async_sessionmaker, create_async_engine
 
-from dobrotsen.config import hidden
+from dobrotsen.config_dobrotsen import hidden
 
 
 class Settings(BaseSettings):
@@ -48,14 +48,14 @@ class DataBase:
 db = DataBase(settings.db_url, settings.db_echo)
 
 
-async def create_db():
+async def create_db(new_db: str):
     conn = await asyncpg.connect(database='postgres',
                                  user=hidden.db_username,
                                  password=hidden.db_password,
                                  host='localhost',
                                  port=hidden.db_local_port
                                  )
-    sql = f'CREATE DATABASE "{hidden.db_name}"'
+    sql = f'CREATE DATABASE "{new_db}"'
     await conn.execute(sql)
     await conn.close()
-    print(f"DB <{hidden.db_name}> success created")
+    print(f"DB <{new_db}> success created")

@@ -17,3 +17,13 @@ class Dobrotsen(Base):
     link: Mapped[str] = mapped_column(primary_key=True, unique=True)
     price: Mapped[Optional[float]]
     image: Mapped[Optional[str]]
+
+
+class StomatBase(DeclarativeBase):
+    __abstract__ = True
+
+
+class Stomat(StomatBase):
+    id: Mapped[int] = mapped_column(primary_key=True, unique=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(primary_key=True, unique=True)
+    

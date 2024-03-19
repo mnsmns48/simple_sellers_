@@ -3,10 +3,10 @@ from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from asyncpg import InvalidCatalogNameError
-from dobrotsen.config import hidden
+from dobrotsen.config_dobrotsen import hidden
 from engine import db, create_db
 from dobrotsen.logic import write_dobrotsen_menu, pars_links
-from dobrotsen.models import Base
+from dobrotsen.models_dobrotsen import Base
 
 
 async def refresh_db():
@@ -17,7 +17,7 @@ async def refresh_db():
         async with db.engine.begin() as async_connect:
             await async_connect.run_sync(Base.metadata.create_all)
     except InvalidCatalogNameError:
-        await create_db()
+        await create_db(new_db=hidden.db_name)
         async with db.engine.begin() as async_connect:
             await async_connect.run_sync(Base.metadata.create_all)
     await write_dobrotsen_menu(url=hidden.url)
