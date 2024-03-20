@@ -10,6 +10,16 @@ async def martirosyan_pro(links: list):
     result_dict['company'] = 'Клиника Артура Мартиросяна'
     result_dict['address'] = 'Большой Саввинский переулок дом 12с6'
     result_dict['site'] = 'https://martirosyan.pro/'
+    # result_dict['category'] =
+    for url in links[:1]:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        parents = soup.find_all(name='div', attrs={'class': 't849__wrapper'})
+        for parent in parents:
+            print('\n', parent.find_next(name='span', attrs={'class': 't849__title t-name t-name_xl'}).getText())
+            childs = parent.findChildren('li')
+            for c in childs:
+                print('--', c.getText())
 
 
 dependencies = {
