@@ -21,7 +21,6 @@ async def write_dobrotsen_menu(url):
     html_code = await get_html(url=url, cookies=cookies)
     soup = BeautifulSoup(html_code, 'lxml')
     block = soup.find_all(name='div', attrs={'class': 'catalog-block'})
-    city = soup.find(name='div', attrs={'class': 'header-location js-popup-open'})
     for b in block:
         if b.getText().strip():
             parent_title = b.findChildren(name="a", attrs={'class': 'catalog-block-title'}, recursive=False)
