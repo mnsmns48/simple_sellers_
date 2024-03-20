@@ -5,7 +5,7 @@ import asyncpg
 from sqlalchemy import NullPool, URL
 from sqlalchemy.ext.asyncio import async_scoped_session, AsyncSession, async_sessionmaker, create_async_engine
 
-from config import general_settings, dobrotsen_settings, Settings
+from config import general_settings, dobrotsen_settings, Settings, stomat_settings
 
 
 def get_url(settings: Settings) -> URL:
@@ -24,7 +24,6 @@ class DataBase:
     def __init__(self, url: URL, echo: bool = False):
         self.engine = create_async_engine(
             url=url,
-
             echo=echo,
             poolclass=NullPool
         )
@@ -61,5 +60,5 @@ async def create_db(new_db: str):
     print(f"DB <{new_db}> success created")
 
 
-general_db = DataBase(get_url(general_settings), echo=True)
 dobrotsen_db = DataBase(get_url(dobrotsen_settings), echo=dobrotsen_settings.echo)
+stomat_db = DataBase(get_url(stomat_settings), echo=stomat_settings.echo)

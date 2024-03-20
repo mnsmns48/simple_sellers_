@@ -11,13 +11,14 @@ from crud import write_data
 from dobrotsen.models_dobrotsen import Dobrotsen
 
 from engine import dobrotsen_db
-from func import get_html, ua
+from func import ua, get_html
 
 
 async def write_dobrotsen_menu(url):
     print('Configure menu')
     menu = dict()
-    html_code = await get_html(url=url, city_id=dobrotsen_settings.city_id)
+    cookies = {"CITY_ID": dobrotsen_settings.city_id, 'CITY_CONFIRMED': 'Y', }
+    html_code = await get_html(url=url, cookies=cookies)
     soup = BeautifulSoup(html_code, 'lxml')
     block = soup.find_all(name='div', attrs={'class': 'catalog-block'})
     city = soup.find(name='div', attrs={'class': 'header-location js-popup-open'})

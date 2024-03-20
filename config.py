@@ -18,5 +18,11 @@ class Dobrotsen(Settings):
     city_id: int
 
 
+class Stomat(Settings):
+    database: str
+    tablename: str
+
+
 general_settings = Settings(_env_file="general.env")
 dobrotsen_settings = Dobrotsen(_env_file=["general.env", "dobrotsen/dobrotsen.env"])
+stomat_settings = Stomat(_env_file=["general.env", "stomatolog_msk_1/stom.env"])
