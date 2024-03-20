@@ -2,26 +2,29 @@ from asyncio import current_task
 from contextlib import asynccontextmanager
 
 import asyncpg
-from pydantic_settings import BaseSettings
-from sqlalchemy import NullPool
+from sqlalchemy import NullPool, URL
 from sqlalchemy.ext.asyncio import async_scoped_session, AsyncSession, async_sessionmaker, create_async_engine
 
-from dobrotsen.config_dobrotsen import hidden
+from config import general_settings, dobrotsen_settings, Settings
 
 
-class Settings(BaseSettings):
-    db_url: str = (f"postgresql+asyncpg://{hidden.db_username}:{hidden.db_password}"
-                   f"@localhost:{hidden.db_local_port}/{hidden.db_name}")
-    db_echo: bool = False
-
-
-settings = Settings()
+def get_url(settings: Settings) -> URL:
+    url_object = URL.create(
+        drivername=settings.driver_name,
+        username=settings.username,
+        password=settings.password.get_secret_value(),
+        host=settings.host,
+        database=settings.database,
+        port=settings.port
+    )
+    return url_object
 
 
 class DataBase:
-    def __init__(self, url: str, echo: bool = False):
+    def __init__(self, url: URL, echo: bool = False):
         self.engine = create_async_engine(
             url=url,
+
             echo=echo,
             poolclass=NullPool
         )
@@ -45,17 +48,18 @@ class DataBase:
             await session.remove()
 
 
-db = DataBase(settings.db_url, settings.db_echo)
-
-
 async def create_db(new_db: str):
     conn = await asyncpg.connect(database='postgres',
-                                 user=hidden.db_username,
-                                 password=hidden.db_password,
-                                 host='localhost',
-                                 port=hidden.db_local_port
+                                 user=general_settings.username,
+                                 password=general_settings.password.get_secret_value(),
+                                 host=general_settings.host,
+                                 port=general_settings.port
                                  )
     sql = f'CREATE DATABASE "{new_db}"'
     await conn.execute(sql)
     await conn.close()
     print(f"DB <{new_db}> success created")
+
+
+general_db = DataBase(get_url(general_settings), echo=True)
+dobrotsen_db = DataBase(get_url(dobrotsen_settings), echo=dobrotsen_settings.echo)

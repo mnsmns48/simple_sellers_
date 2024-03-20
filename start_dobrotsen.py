@@ -1,26 +1,24 @@
 import asyncio
 from datetime import datetime
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
 from asyncpg import InvalidCatalogNameError
-from dobrotsen.config_dobrotsen import hidden
-from engine import db, create_db
+from config import dobrotsen_settings
+from engine import dobrotsen_db, create_db, general_db
 from dobrotsen.logic import write_dobrotsen_menu, pars_links
-from dobrotsen.models_dobrotsen import Base
+from dobrotsen.models_dobrotsen import DobroBase
 
 
 async def refresh_db():
-    async with db.engine.begin() as async_connect:
-        await async_connect.run_sync(Base.metadata.drop_all)
-    print('Таблица удалена')
     try:
-        async with db.engine.begin() as async_connect:
-            await async_connect.run_sync(Base.metadata.create_all)
+        async with dobrotsen_db.engine.begin() as async_connect:
+            await async_connect.run_sync(DobroBase.metadata.drop_all)
+        print('Таблица удалена')
+        async with dobrotsen_db.engine.begin() as async_connect:
+            await async_connect.run_sync(DobroBase.metadata.create_all)
     except InvalidCatalogNameError:
-        await create_db(new_db=hidden.db_name)
-        async with db.engine.begin() as async_connect:
-            await async_connect.run_sync(Base.metadata.create_all)
-    await write_dobrotsen_menu(url=hidden.url)
+        await create_db(new_db=dobrotsen_settings.database)
+        async with dobrotsen_db.engine.begin() as async_connect:
+            await async_connect.run_sync(DobroBase.metadata.create_all)
+    await write_dobrotsen_menu(url=dobrotsen_settings.url)
     await pars_links()
 
 

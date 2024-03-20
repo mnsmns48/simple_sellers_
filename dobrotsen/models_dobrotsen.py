@@ -2,7 +2,7 @@ from typing import Optional
 from sqlalchemy.orm import DeclarativeBase, declared_attr, Mapped, mapped_column
 
 
-class Base(DeclarativeBase):
+class DobroBase(DeclarativeBase):
     __abstract__ = True
 
     @declared_attr.directive
@@ -10,20 +10,10 @@ class Base(DeclarativeBase):
         return cls.__name__.lower()
 
 
-class Dobrotsen(Base):
+class Dobrotsen(DobroBase):
     id: Mapped[int] = mapped_column(primary_key=True, unique=True, autoincrement=True)
     parent: Mapped[int]
     title: Mapped[str] = mapped_column(primary_key=True, unique=True)
     link: Mapped[str] = mapped_column(primary_key=True, unique=True)
     price: Mapped[Optional[float]]
     image: Mapped[Optional[str]]
-
-
-class StomatBase(DeclarativeBase):
-    __abstract__ = True
-
-
-class Stomat(StomatBase):
-    id: Mapped[int] = mapped_column(primary_key=True, unique=True, autoincrement=True)
-    title: Mapped[str] = mapped_column(primary_key=True, unique=True)
-    

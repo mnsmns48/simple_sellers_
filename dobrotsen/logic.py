@@ -2,20 +2,22 @@ import asyncio
 from datetime import datetime
 import aiohttp
 from bs4 import BeautifulSoup
-from sqlalchemy import Result, select
+from sqlalchemy import Result, select, text
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 
-from dobrotsen.config_dobrotsen import hidden
-from dobrotsen.crud import write_data, get_links_from_db
+from config import dobrotsen_settings
+from crud import write_data
 from dobrotsen.models_dobrotsen import Dobrotsen
 
-from engine import db
+from engine import dobrotsen_db
 from func import get_html, ua
 
 
 async def write_dobrotsen_menu(url):
     print('Configure menu')
     menu = dict()
-    html_code = await get_html(url=url, city_id=hidden.city_id)
+    html_code = await get_html(url=url, city_id=dobrotsen_settings.city_id)
     soup = BeautifulSoup(html_code, 'lxml')
     block = soup.find_all(name='div', attrs={'class': 'catalog-block'})
     city = soup.find(name='div', attrs={'class': 'header-location js-popup-open'})
@@ -45,10 +47,10 @@ async def write_dobrotsen_menu(url):
                 'link': f"https://dobrotsen.ru{value.get('link')}"
             }
         )
-    async with db.scoped_session() as session:
+    async with dobrotsen_db.scoped_session() as session:
         await write_data(session=session, table=Dobrotsen, data=values)
     values.clear()
-    async with db.scoped_session() as session:
+    async with dobrotsen_db.scoped_session() as session:
         result: Result = await session.execute(select(Dobrotsen).filter(Dobrotsen.parent == 0))
         r = result.scalars().all()
         dict_parent = {
@@ -84,15 +86,15 @@ async def bs_page_processing(page_html: str, parent: int):
             }
         )
     if titles:
-        async with db.scoped_session() as session:
+        async with dobrotsen_db.scoped_session() as session:
             await write_data(session=session, table=Dobrotsen, data=result)
 
 
 async def pars_links():
     print('Start parsing')
-    async with db.scoped_session() as session:
+    async with dobrotsen_db.scoped_session() as session:
         links = await get_links_from_db(session=session, table=Dobrotsen)
-    cookies = {"CITY_ID": hidden.city_id, 'CITY_CONFIRMED': 'Y', }
+    cookies = {"CITY_ID": dobrotsen_settings.city_id, 'CITY_CONFIRMED': 'Y', }
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False),
                                      cookies=cookies) as session:
         for link, parent in links.items():
@@ -106,3 +108,19 @@ async def pars_links():
             await bs_page_processing(page_html=html_code, parent=parent)
             await asyncio.sleep(1)
     print('Database updated:', datetime.now())
+
+
+async def get_links_from_db(session: AsyncSession, table: DeclarativeAttributeIntercept) -> dict:
+    result_dict = dict()
+    subq1 = select(table.parent).scalar_subquery()
+    q1 = select(table.link, table.id).filter(table.id.not_in(subq1))
+    q2 = select(table.link, table.id).filter(table.parent != 0)
+    query = q1.union(q2).order_by(text("1"))
+    result: Result = await session.execute(query)
+    for line in result.fetchall():
+        result_dict.update(
+            {
+                line[0]: line[1]
+            }
+        )
+    return result_dict
