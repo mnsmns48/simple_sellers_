@@ -10,7 +10,7 @@ from stomatolog_msk_1.models_stomatology import StomatBase
 
 async def martirosyan_pro(links: list):
     result_dict = list()
-    for url in links[:1]:
+    for url in links:
         html = await get_html(url)
         soup = BeautifulSoup(markup=html, features='lxml')
         parents = soup.find_all(name='div', attrs={'class': 't849__wrapper'})
@@ -98,7 +98,6 @@ async def orthodont(links: list):
         html = await get_html(url)
         soup = BeautifulSoup(markup=html, features='lxml')
         table = soup.find('table', {'class': 'table table-striped table-hover js-table'})
-        # regex =
         sections = soup.find_all('td', {'colspan': '3'})
         sections_numbers = [l.find_previous('tr').get('data-section') for l in sections]
         for n in sections_numbers:
@@ -147,7 +146,6 @@ async def dentalfantasy(links: list):
         html = await get_html(url)
         soup = BeautifulSoup(markup=html, features='lxml')
         table = soup.find('div', {'class': ['py-4', 'py-md-5', 'mb-last-0 ']})
-        # titles = [i.text.strip() for i in table.find_all('span', {'class': ['text-body', 'state-color-switch']})]
         card_list = [i.find_parent('div') for i in table.find_all('div', {'role': 'tabpanel'})]
         for item in card_list:
             category = item.find('span', {'class': ['text-body', 'state-color-switch']}).text
@@ -187,57 +185,95 @@ async def zub_ru(links: list):
                          data=result_dict)
 
 
+async def prezi_dent(links: list):
+    result_dict = list()
+    for url in links:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        parents = soup.find_all('div', {'class': ['accordion__item', 'jsAccordion', 'is-open']})
+        for t in parents:
+            category = t.find('h2').text.strip()
+            for srvs, price in zip(t.findChildren('span', ['custom-tooltip', 'jsCustomTooltip']),
+                                   t.findChildren('div', {'class': 'price-list__price'})):
+                result_dict.append({
+                    'company': 'Стоматология «ПрезиДЕНТ» на Фрунзенской',
+                    'address': 'Фрунзенская набережная, д. 44/2',
+                    'site': 'https://www.prezi-dent.ru/',
+                    'category': category,
+                    'med_service': srvs.text.strip(),
+                    'price': price.text.strip()
+                })
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
+async def mositaldent(links: list):
+    result_dict = list()
+    for url in links:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        table = soup.find_all('div', {'class': 'prices__dep'})
+        for i in table:
+            title = i.find('h3', {'class': 'title closed'})
+            title_text = title.contents[0].strip().rsplit('. ', 1)[1]
+            for item in i.findChildren('div', {'class': 'price-wrapper'}):
+                result_dict.append({
+                    'company': 'Моситалмед',
+                    'address': 'Комсомольский проспект, д. 15, стр. 1',
+                    'site': 'https://mositaldent.ru',
+                    'category': title_text,
+                    'med_service': item.contents[1].text.strip(),
+                    'price': item.contents[2].text.strip()
+                })
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
 dependencies = {
-    # 'https://martirosyan.pro/': {
-    #     'links': [
-    #         'https://martirosyan.pro/services#!/tab/504070508-1',
-    #         'https://martirosyan.pro/services#!/tab/504070508-2',
-    #         'https://martirosyan.pro/services#!/tab/504070508-3',
-    #         'https://martirosyan.pro/services#!/tab/504070508-4',
-    #         'https://martirosyan.pro/services#!/tab/504070508-5',
-    #     ],
-    #     'process': martirosyan_pro
-    # },
-    # 'https://familydoctor.ru/prices/': {
-    #     'links': [
-    #         'https://familydoctor.ru/prices/stomatologiya/',
-    #         'https://familydoctor.ru/prices/child/stomatologiya/',
-    #         'https://familydoctor.ru/prices/ortopedicheskaya-stomatologiya/',
-    #         'https://familydoctor.ru/prices/hirurgicheskaya-stomatologiya/',
-    #         'https://familydoctor.ru/prices/child/hirurgicheskaya-stomatologiya/'
-    #     ],
-    #     'process': familydoctor
-    # },
-    # 'https://nydc.ru/uslugi-i-tseny/': {
-    #     'links': [
-    #         'https://nydc.ru/uslugi-i-tseny/',
-    #     ],
-    #     'process': nydc
-    # },
-    # 'https://www.orthodont-elit.ru/price/': {
-    #     'links': [
-    #         'https://www.orthodont-elit.ru/price/full/'
-    #     ],
-    #     'process': orthodont
-    # },
-    # 'https://www.alfa-clinic.ru': {
-    #     'links': [
-    #         'https://www.alfa-clinic.ru/czenyi/'
-    #     ],
-    #     'process': alfaclinic
-    # },
-    # 'https://www.dentalfantasy.ru': {
-    #     'links': [
-    #         'https://www.dentalfantasy.ru/price-list/'
-    #     ],
-    #     'process': dentalfantasy
-    # },
-    # 'https://zub.ru': {
-    #     'links': [
-    #         'https://zub.ru/price-list/'
-    #     ],
-    #     'process': zub_ru
-    # }
+    'https://martirosyan.pro/': {
+        'links': ['https://martirosyan.pro/services#!/tab/504070508-1'],
+        'process': martirosyan_pro
+    },
+    'https://familydoctor.ru/prices/': {
+        'links': [
+            'https://familydoctor.ru/prices/stomatologiya/',
+            'https://familydoctor.ru/prices/child/stomatologiya/',
+            'https://familydoctor.ru/prices/ortopedicheskaya-stomatologiya/',
+            'https://familydoctor.ru/prices/hirurgicheskaya-stomatologiya/',
+            'https://familydoctor.ru/prices/child/hirurgicheskaya-stomatologiya/'
+        ],
+        'process': familydoctor
+    },
+    'https://nydc.ru/uslugi-i-tseny/': {
+        'links': ['https://nydc.ru/uslugi-i-tseny/'],
+        'process': nydc
+    },
+    'https://www.orthodont-elit.ru/price/': {
+        'links': ['https://www.orthodont-elit.ru/price/full/'],
+        'process': orthodont
+    },
+    'https://www.alfa-clinic.ru': {
+        'links': ['https://www.alfa-clinic.ru/czenyi/'],
+        'process': alfaclinic
+    },
+    'https://www.dentalfantasy.ru': {
+        'links': ['https://www.dentalfantasy.ru/price-list/'],
+        'process': dentalfantasy
+    },
+    'https://zub.ru': {
+        'links': ['https://zub.ru/price-list/'],
+        'process': zub_ru
+    },
+    'https://www.prezi-dent.ru': {
+        'links': ['https://www.prezi-dent.ru/frunzenskaya/uslugi-i-tseny'],
+        'process': prezi_dent
+    },
+    'https://mositaldent.ru': {
+        'links': ['https://mositaldent.ru/tseny'],
+        'process': mositaldent
+    }
 }
 
 

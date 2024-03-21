@@ -1,6 +1,5 @@
 from typing import Optional
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
 from config import stomat_settings
 
 
