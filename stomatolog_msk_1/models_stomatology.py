@@ -1,7 +1,4 @@
-from datetime import datetime
 from typing import Optional
-
-from sqlalchemy import DateTime, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from config import stomat_settings
@@ -13,9 +10,11 @@ class StomatBase(DeclarativeBase):
 
 class Stomat(StomatBase):
     __tablename__ = stomat_settings.tablename
-    company: Mapped[str] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, unique=True)
+    company: Mapped[str]
     address: Mapped[str]
     site: Mapped[str]
     category: Mapped[Optional[str]]
-    med_service: Mapped[str]
-    price: Mapped[float]
+    med_service: Mapped[Optional[str]]
+    price: Mapped[Optional[str]]
+    price_promo: Mapped[Optional[str]]
