@@ -1,3 +1,4 @@
+import asyncio
 import re
 
 from bs4 import BeautifulSoup
@@ -120,39 +121,67 @@ async def orthodont(links: list):
                        condition='-')
 
 
+async def alfaclinic(links: list):
+    result_dict = list()
+    for url in links:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        table = soup.find_all('table', {'align': 'left'})
+        for item in table:
+            category = item.td.text
+            for i in item.findChildren('tr')[2:]:
+                result_dict.append({
+                    'company': 'Стоматология ALFA-CLINIC',
+                    'address': 'ул. Малая Пироговская, 16',
+                    'site': 'https://www.alfa-clinic.ru/',
+                    'category': category,
+                    'med_service': i.contents[0].text,
+                    'price': i.contents[1].text,
+                })
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
 dependencies = {
-    'https://martirosyan.pro/': {
-        'links': [
-            'https://martirosyan.pro/services#!/tab/504070508-1',
-            'https://martirosyan.pro/services#!/tab/504070508-2',
-            'https://martirosyan.pro/services#!/tab/504070508-3',
-            'https://martirosyan.pro/services#!/tab/504070508-4',
-            'https://martirosyan.pro/services#!/tab/504070508-5',
-        ],
-        'process': martirosyan_pro
-    },
-    'https://familydoctor.ru/prices/': {
-        'links': [
-            'https://familydoctor.ru/prices/stomatologiya/',
-            'https://familydoctor.ru/prices/child/stomatologiya/',
-            'https://familydoctor.ru/prices/ortopedicheskaya-stomatologiya/',
-            'https://familydoctor.ru/prices/hirurgicheskaya-stomatologiya/',
-            'https://familydoctor.ru/prices/child/hirurgicheskaya-stomatologiya/'
-        ],
-        'process': familydoctor
-    },
-    'https://nydc.ru/uslugi-i-tseny/': {
-        'links': [
-            'https://nydc.ru/uslugi-i-tseny/',
-        ],
-        'process': nydc
-    },
-    'https://www.orthodont-elit.ru/price/': {
-        'links': [
-            'https://www.orthodont-elit.ru/price/full/'
-        ],
-        'process': orthodont
-    }
+    # 'https://martirosyan.pro/': {
+    #     'links': [
+    #         'https://martirosyan.pro/services#!/tab/504070508-1',
+    #         'https://martirosyan.pro/services#!/tab/504070508-2',
+    #         'https://martirosyan.pro/services#!/tab/504070508-3',
+    #         'https://martirosyan.pro/services#!/tab/504070508-4',
+    #         'https://martirosyan.pro/services#!/tab/504070508-5',
+    #     ],
+    #     'process': martirosyan_pro
+    # },
+    # 'https://familydoctor.ru/prices/': {
+    #     'links': [
+    #         'https://familydoctor.ru/prices/stomatologiya/',
+    #         'https://familydoctor.ru/prices/child/stomatologiya/',
+    #         'https://familydoctor.ru/prices/ortopedicheskaya-stomatologiya/',
+    #         'https://familydoctor.ru/prices/hirurgicheskaya-stomatologiya/',
+    #         'https://familydoctor.ru/prices/child/hirurgicheskaya-stomatologiya/'
+    #     ],
+    #     'process': familydoctor
+    # },
+    # 'https://nydc.ru/uslugi-i-tseny/': {
+    #     'links': [
+    #         'https://nydc.ru/uslugi-i-tseny/',
+    #     ],
+    #     'process': nydc
+    # },
+    # 'https://www.orthodont-elit.ru/price/': {
+    #     'links': [
+    #         'https://www.orthodont-elit.ru/price/full/'
+    #     ],
+    #     'process': orthodont
+    # },
+    # 'https://www.alfa-clinic.ru': {
+    #     'links': [
+    #         'https://www.alfa-clinic.ru/czenyi/'
+    #     ],
+    #     'process': alfaclinic
+    # }
 }
 
 
