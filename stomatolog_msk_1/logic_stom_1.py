@@ -1,8 +1,6 @@
 import asyncio
 import re
-
 from bs4 import BeautifulSoup
-
 from config import stomat_settings
 from crud import write_data, del_data
 from engine import stomat_db
@@ -143,6 +141,52 @@ async def alfaclinic(links: list):
                          data=result_dict)
 
 
+async def dentalfantasy(links: list):
+    result_dict = list()
+    for url in links:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        table = soup.find('div', {'class': ['py-4', 'py-md-5', 'mb-last-0 ']})
+        # titles = [i.text.strip() for i in table.find_all('span', {'class': ['text-body', 'state-color-switch']})]
+        card_list = [i.find_parent('div') for i in table.find_all('div', {'role': 'tabpanel'})]
+        for item in card_list:
+            category = item.find('span', {'class': ['text-body', 'state-color-switch']}).text
+            for srv, price in zip(item.find_all('div', {'class': 'media-body'}),
+                                  item.find_all('div', {'class': 'text-right'})):
+                result_dict.append({
+                    'company': 'Дентал Фэнтези',
+                    'address': 'ул. Ефремова, д. 10, к. 2',
+                    'site': 'https://www.dentalfantasy.ru',
+                    'category': category,
+                    'med_service': srv.span.text.replace('i', '').strip(),
+                    'price': price.text.strip()})
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
+async def zub_ru(links: list):
+    result_dict = list()
+    for url in links:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        titles = soup.find_all('h3', {'class': 'main-title-table'})
+        for title in titles:
+            tbody = title.find_next('div')
+            for item in tbody.findChildren('tr'):
+                result_dict.append({
+                    'company': 'Стоматология «Зуб.ру»',
+                    'address': 'м. Шаболовская, 2-й Верхний Михайловский проезд, д. 9, стр. 2, 3 этаж.',
+                    'site': 'https://zub.ru/',
+                    'category': title.text.strip(),
+                    'med_service': item.contents[1].text.strip(),
+                    'price': item.contents[3].text.strip()
+                })
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
 dependencies = {
     # 'https://martirosyan.pro/': {
     #     'links': [
@@ -181,6 +225,18 @@ dependencies = {
     #         'https://www.alfa-clinic.ru/czenyi/'
     #     ],
     #     'process': alfaclinic
+    # },
+    # 'https://www.dentalfantasy.ru': {
+    #     'links': [
+    #         'https://www.dentalfantasy.ru/price-list/'
+    #     ],
+    #     'process': dentalfantasy
+    # },
+    # 'https://zub.ru': {
+    #     'links': [
+    #         'https://zub.ru/price-list/'
+    #     ],
+    #     'process': zub_ru
     # }
 }
 
