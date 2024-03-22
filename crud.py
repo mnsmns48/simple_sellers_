@@ -11,7 +11,7 @@ async def write_data(session: AsyncSession, table: DeclarativeAttributeIntercept
     await session.commit()
 
 
-async def del_data(session: AsyncSession, table: DeclarativeAttributeIntercept, condition: str):
+async def del_data(session: AsyncSession, table: DeclarativeAttributeIntercept, condition: str | None):
     await session.execute(
         delete(table).filter(table.c.price == condition)
     )

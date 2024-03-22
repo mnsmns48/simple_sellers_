@@ -1,11 +1,19 @@
 import asyncio
+import os
 import re
+from pathlib import Path
+
 from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+
 from config import stomat_settings
 from crud import write_data, del_data
 from engine import stomat_db
 from func import get_html
 from stomatolog_msk_1.models_stomatology import StomatBase
+import undetected_chromedriver as uc
+
+path = Path(os.path.abspath(__file__)).parent.parent
 
 
 async def martirosyan_pro(links: list):
@@ -51,11 +59,7 @@ async def familydoctor(links: list):
         for line in titles:
             result_dict.append({
                 'company': 'Клиника "Семейный доктор"',
-                'address': 'Корпус на Усачева (для взрослых и детей) (м. Спортивная) '
-                           'Корпус на Усачева (для взрослых и детей) (м. Спортивная) '
-                           'Корпус на Новослободской (для взрослых и детей) (м. Новослободская) '
-                           'Корпус на Озерковской (для взрослых) (м. Новокузнецкая) '
-                           'Корпус на Бауманской (для взрослых) (м. Бауманская)',
+                'address': 'Баррикадная ул., 19, стр. 3',
                 'site': 'https://familydoctor.ru',
                 'category': f"[{soup.find(name='div', attrs={'class': 'item sel'}).text.strip()}] "
                             f"{soup.find(name='h1').text.strip()}",
@@ -231,48 +235,161 @@ async def mositaldent(links: list):
                          data=result_dict)
 
 
+async def generation_family(links: list):
+    result_dict = list()
+    for url in links:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        items = soup.find_all('div', {'class': ['t812__pricelist-item__title', 't-name', 't-name_sm'],
+                                      'data-redactor-toolbar': 'no'})
+        for line in items:
+            result_dict.append({
+                'company': 'Стоматологический центр Generation',
+                'address': 'Ефремова 10к1',
+                'site': 'https://generation.family',
+                'category': line.find_previous('h2').text.strip(),
+                'med_service': line.previous.previous.text.strip(),
+                'price': line.text.strip()
+            })
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
+async def docdent(links: list):
+    driver = uc.Chrome(headless=False,
+                       use_subprocess=False,
+                       version_main=114,
+                       driver_executable_path=f'{path}/chromedriver')
+    result_dict = list()
+    for url in links:
+        driver.get(url)
+        await asyncio.sleep(1)
+        driver.implicitly_wait(1)
+        driver.find_element(By.XPATH, "//label[@class='b-item'][1]").click()
+        await asyncio.sleep(1)
+        driver.find_element(By.XPATH, "//div[@class='cat-c-b-btn']").click()
+        await asyncio.sleep(1)
+        items = driver.find_element(By.XPATH, "//div[@class='price-data-inf-blk']")
+        soup = BeautifulSoup(markup=items.get_attribute('innerHTML'), features='lxml')
+        for srvs, price in zip(soup.find_all('span', {'class': 'price-data-inf-txt'}),
+                               soup.find_all('span', {'class': 'price-data-buy-txt'})):
+            result_dict.append({
+                'company': 'DOCDENT',
+                'address': 'Ломоносовский просп., 7, корп. 5',
+                'site': 'https://docdent.ru',
+                'med_service': srvs.text.strip(),
+                'price': price.text.strip()
+            })
+    driver.quit()
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
+async def alfazdrav(links: list):
+    result_dict = list()
+    driver = uc.Chrome(headless=False,
+                       use_subprocess=False,
+                       version_main=114,
+                       driver_executable_path=f'{path}/chromedriver')
+    for url in links:
+        driver.get(url)
+        await asyncio.sleep(1)
+        driver.implicitly_wait(1)
+        driver.find_element(By.XPATH, "//li[@class='b-content-tabs__title b-content-tabs__title--js_init'][3]").click()
+        await asyncio.sleep(1)
+        items = driver.find_element(By.XPATH, "//ul[@data-id='dental-department']")
+        soup = BeautifulSoup(markup=items.get_attribute('innerHTML'), features='lxml')
+        items = soup.find_all('li', {'class': ['b-prices__section']})
+        for line in items:
+            category = line.find('p', {'class': ['h3', 'b-prices__section-title']}).text.strip()
+            for srvs, price in zip(line.findChildren('td', {'class': 'b-prices__item-name'}),
+                                   line.findChildren('td', {'class': 'b-prices__item-price'})):
+                result_dict.append({
+                    'company': 'Альфа-Центр Здоровья',
+                    'address': 'Комсомольский проспект, 17/11',
+                    'site': 'https://alfazdrav.ru',
+                    'category': category,
+                    'med_service': srvs.text.strip(),
+                    'price': price.text.strip()
+                })
+    driver.quit()
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+        await del_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                       condition='')
+
+
+async def lcenter(links: list):
+    result_dict = list()
+    for url in links:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        for line in soup.find_all('div', {'class': 'product-price--title'}):
+            print(line.text.strip().split('  ')[0].strip())
+
+
+
 dependencies = {
-    'https://martirosyan.pro/': {
-        'links': ['https://martirosyan.pro/services#!/tab/504070508-1'],
-        'process': martirosyan_pro
-    },
-    'https://familydoctor.ru/prices/': {
-        'links': [
-            'https://familydoctor.ru/prices/stomatologiya/',
-            'https://familydoctor.ru/prices/child/stomatologiya/',
-            'https://familydoctor.ru/prices/ortopedicheskaya-stomatologiya/',
-            'https://familydoctor.ru/prices/hirurgicheskaya-stomatologiya/',
-            'https://familydoctor.ru/prices/child/hirurgicheskaya-stomatologiya/'
-        ],
-        'process': familydoctor
-    },
-    'https://nydc.ru/uslugi-i-tseny/': {
-        'links': ['https://nydc.ru/uslugi-i-tseny/'],
-        'process': nydc
-    },
-    'https://www.orthodont-elit.ru/price/': {
-        'links': ['https://www.orthodont-elit.ru/price/full/'],
-        'process': orthodont
-    },
-    'https://www.alfa-clinic.ru': {
-        'links': ['https://www.alfa-clinic.ru/czenyi/'],
-        'process': alfaclinic
-    },
-    'https://www.dentalfantasy.ru': {
-        'links': ['https://www.dentalfantasy.ru/price-list/'],
-        'process': dentalfantasy
-    },
-    'https://zub.ru': {
-        'links': ['https://zub.ru/price-list/'],
-        'process': zub_ru
-    },
-    'https://www.prezi-dent.ru': {
-        'links': ['https://www.prezi-dent.ru/frunzenskaya/uslugi-i-tseny'],
-        'process': prezi_dent
-    },
-    'https://mositaldent.ru': {
-        'links': ['https://mositaldent.ru/tseny'],
-        'process': mositaldent
+    # 'https://martirosyan.pro/': {
+    #     'links': ['https://martirosyan.pro/services#!/tab/504070508-1'],
+    #     'process': martirosyan_pro
+    # },
+    # 'https://familydoctor.ru/prices/': {
+    #     'links': [
+    #         'https://familydoctor.ru/prices/stomatologiya/',
+    #         'https://familydoctor.ru/prices/child/stomatologiya/',
+    #         'https://familydoctor.ru/prices/ortopedicheskaya-stomatologiya/',
+    #         'https://familydoctor.ru/prices/hirurgicheskaya-stomatologiya/',
+    #         'https://familydoctor.ru/prices/child/hirurgicheskaya-stomatologiya/'
+    #     ],
+    #     'process': familydoctor
+    # },
+    # 'https://nydc.ru/uslugi-i-tseny/': {
+    #     'links': ['https://nydc.ru/uslugi-i-tseny/'],
+    #     'process': nydc
+    # },
+    # 'https://www.orthodont-elit.ru/price/': {
+    #     'links': ['https://www.orthodont-elit.ru/price/full/'],
+    #     'process': orthodont
+    # },
+    # 'https://www.alfa-clinic.ru': {
+    #     'links': ['https://www.alfa-clinic.ru/czenyi/'],
+    #     'process': alfaclinic
+    # },
+    # 'https://www.dentalfantasy.ru': {
+    #     'links': ['https://www.dentalfantasy.ru/price-list/'],
+    #     'process': dentalfantasy
+    # },
+    # 'https://zub.ru': {
+    #     'links': ['https://zub.ru/price-list/'],
+    #     'process': zub_ru
+    # },
+    # 'https://www.prezi-dent.ru': {
+    #     'links': ['https://www.prezi-dent.ru/frunzenskaya/uslugi-i-tseny'],
+    #     'process': prezi_dent
+    # },
+    # 'https://mositaldent.ru': {
+    #     'links': ['https://mositaldent.ru/tseny'],
+    #     'process': mositaldent
+    # },
+    # 'https://generation.family': {
+    #     'links': ['https://generation.family/division'],
+    #     'process': generation_family
+    # },
+    # 'https://docdent.ru/': {
+    #     'links': ['https://docdent.ru/tseny/'],
+    #     'process': docdent
+    # },
+    # 'https://alfazdrav.ru': {
+    #     'links': ['https://alfazdrav.ru/services/price/'],
+    #     'process': alfazdrav
+    # },
+    'https://lcenter.ru/directions/stomatologiya': {
+        'links': ['https://lcenter.ru/directions/stomatologiya#price'],
+        'process': lcenter
     }
 }
 
