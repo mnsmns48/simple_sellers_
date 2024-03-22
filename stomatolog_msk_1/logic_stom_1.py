@@ -16,7 +16,7 @@ import undetected_chromedriver as uc
 path = Path(os.path.abspath(__file__)).parent.parent
 
 
-async def martirosyan_pro(links: list):
+async def martirosyan_pro(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
@@ -49,7 +49,7 @@ async def martirosyan_pro(links: list):
                          data=result_dict)
 
 
-async def familydoctor(links: list):
+async def familydoctor(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
@@ -73,7 +73,7 @@ async def familydoctor(links: list):
                          data=result_dict)
 
 
-async def nydc(links: list):
+async def nydc(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
@@ -96,7 +96,7 @@ async def nydc(links: list):
                          data=result_dict)
 
 
-async def orthodont(links: list):
+async def orthodont(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
@@ -122,7 +122,7 @@ async def orthodont(links: list):
                        condition='-')
 
 
-async def alfaclinic(links: list):
+async def alfaclinic(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
@@ -144,7 +144,7 @@ async def alfaclinic(links: list):
                          data=result_dict)
 
 
-async def dentalfantasy(links: list):
+async def dentalfantasy(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
@@ -167,7 +167,7 @@ async def dentalfantasy(links: list):
                          data=result_dict)
 
 
-async def zub_ru(links: list):
+async def zub_ru(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
@@ -189,7 +189,7 @@ async def zub_ru(links: list):
                          data=result_dict)
 
 
-async def prezi_dent(links: list):
+async def prezi_dent(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
@@ -212,7 +212,7 @@ async def prezi_dent(links: list):
                          data=result_dict)
 
 
-async def mositaldent(links: list):
+async def mositaldent(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
@@ -235,7 +235,7 @@ async def mositaldent(links: list):
                          data=result_dict)
 
 
-async def generation_family(links: list):
+async def generation_family(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
@@ -256,7 +256,7 @@ async def generation_family(links: list):
                          data=result_dict)
 
 
-async def docdent(links: list):
+async def docdent(links: list) -> None:
     driver = uc.Chrome(headless=False,
                        use_subprocess=False,
                        version_main=114,
@@ -287,7 +287,7 @@ async def docdent(links: list):
                          data=result_dict)
 
 
-async def alfazdrav(links: list):
+async def alfazdrav(links: list) -> None:
     result_dict = list()
     driver = uc.Chrome(headless=False,
                        use_subprocess=False,
@@ -322,14 +322,13 @@ async def alfazdrav(links: list):
                        condition='')
 
 
-async def lcenter(links: list):
+async def lcenter(links: list) -> None:
     result_dict = list()
     for url in links:
         html = await get_html(url)
         soup = BeautifulSoup(markup=html, features='lxml')
         for line in soup.find_all('div', {'class': 'product-price--title'}):
             print(line.text.strip().split('  ')[0].strip())
-
 
 
 dependencies = {
