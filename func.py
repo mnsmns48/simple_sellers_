@@ -1,5 +1,7 @@
 import aiohttp
+import requests
 from fake_useragent import UserAgent
+
 
 ua = UserAgent()
 
@@ -13,5 +15,9 @@ async def get_html(url: str, **kwargs) -> str:
                                    'user-agent': ua.random
                                }
                                ) as response:
-            html_code = await response.text()
+            try:
+                html_code = await response.text()
+            except UnicodeDecodeError:
+                html = requests.get(url)
+                return html.text
     return html_code

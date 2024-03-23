@@ -327,8 +327,111 @@ async def lcenter(links: list) -> None:
     for url in links:
         html = await get_html(url)
         soup = BeautifulSoup(markup=html, features='lxml')
-        for line in soup.find_all('div', {'class': 'product-price--title'}):
-            print(line.text.strip().split('  ')[0].strip())
+        for srvs, price in zip(soup.find_all('div', {'class': 'product-price--title'}),
+                               soup.find_all('div', {'class': 'product-price--price'})):
+            result_dict.append({
+                'company': 'Лечебный центр',
+                'address': 'м. Парк Культуры, ул. Тимура Фрунзе 15/1',
+                'site': 'lcenter.ru',
+                'med_service': srvs.text.strip().split('  ')[0].strip(),
+                'price': price.text.strip()
+            })
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
+async def slavdent(links: list) -> None:
+    result_dict = list()
+    for url in links:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        items = soup.find_all('div', {'class': 'price-section bs-1'})
+        for line in items:
+            category = line.div.div.text.strip()
+            for srvs, price in zip(soup.find_all('div', {'class': 'price-item__name'}),
+                                   soup.findChildren('div', {'class': 'price-item__price'})):
+                result_dict.append({
+                    'company': 'Славдент',
+                    'address': 'Комсомольский пр-т, д.35',
+                    'site': 'https://slavdent.ru',
+                    'category': category,
+                    'med_service': srvs.text.strip(),
+                    'price': price.text.strip().split('   ')[0]
+                })
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
+async def artdent(links: list) -> None:
+    result_dict = list()
+    for url in links:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        table = soup.find('h1')
+        tds = table.find_next('table').find_all('tr')
+        arr = list()
+        for line in tds[1:]:
+            try:
+                srvs = line.contents[3].text.strip()
+                price = line.contents[5].text.strip()
+            except IndexError:
+                srvs = line.contents[1].text.strip()
+                price = line.contents[3].text.strip()
+            if len(srvs) > 117 or len(price) > 7 or price == '-' or srvs == price or price == '':
+                pass
+            else:
+                arr.append([srvs, price])
+        for line in arr:
+            result_dict.append({
+                'company': 'Стоматология "АртДЕНТ"',
+                'address': 'Хамовники, ул. Усачева, д.29, кор.3',
+                'site': 'https://artdent.ru',
+                'category': table.text,
+                'med_service': line[0],
+                'price': line[1]
+            })
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
+async def drelmar(links: list) -> None:
+    result_dict = list()
+    driver = uc.Chrome(headless=False,
+                       use_subprocess=False,
+                       version_main=114,
+                       driver_executable_path=f'{path}/chromedriver')
+    for url in links:
+        driver.get(url)
+        driver.implicitly_wait(2)
+        end = driver.find_element(By.XPATH, "//div[@class='r t-rec t-rec_pt_30 t-screenmin-980px']")
+        driver.execute_script("arguments[0].scrollIntoView(true);", end)
+        await asyncio.sleep(1)
+        table = driver.find_element(By.XPATH, "//div[@class='t585'][1]")
+        soup = BeautifulSoup(markup=table.get_attribute('innerHTML'), features='lxml')
+        items = soup.find_all('div', {'class': 't585__header'})
+        for line in items:
+            text = (line.find_next('div',
+                                   {'class': ['t585__text', 't-descr', 't-descr_xs']}).text
+                    .replace(' ', ' ').replace(' ', ' '))
+            refactor_text = text.strip().rsplit('руб.')
+            for srvs in refactor_text:
+                splt = srvs.split(' —')
+                if len(splt) == 2:
+                    result_dict.append({
+                        'company': 'Лаборатория улыбок Dr. Elmar',
+                        'address': 'Оболенский переулок, д. 9, корп. 8 (м."Фрунзенская")',
+                        'site': 'https://www.drelmar.ru',
+                        'category': line.contents[0].text,
+                        'med_service': splt[0].strip(),
+                        'price': splt[1].replace('  ', ' ').strip()
+                    })
+    driver.quit()
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
 
 
 dependencies = {
@@ -386,9 +489,28 @@ dependencies = {
     #     'links': ['https://alfazdrav.ru/services/price/'],
     #     'process': alfazdrav
     # },
-    'https://lcenter.ru/directions/stomatologiya': {
-        'links': ['https://lcenter.ru/directions/stomatologiya#price'],
-        'process': lcenter
+    # 'https://lcenter.ru': {
+    #     'links': ['https://lcenter.ru/directions/stomatologiya#price'],
+    #     'process': lcenter
+    # },
+    # 'https://slavdent.ru': {
+    #     'links': ['https://slavdent.ru/prices/'],
+    #     'process': slavdent
+    # },
+    # 'https://artdent.ru': {
+    #     'links': [
+    #         'https://artdent.ru/cena2.html',
+    #         'https://artdent.ru/cenaprotes.html',
+    #         'https://artdent.ru/surgery.html',
+    #         'https://artdent.ru/implantology.html',
+    #         'https://artdent.ru/cenaparodont.html',
+    #         'https://artdent.ru/ortodonty.html',
+    #     ],
+    #     'process': artdent
+    # },
+    'https://www.drelmar.ru': {
+        'links': ['https://www.drelmar.ru/price'],
+        'process': drelmar
     }
 }
 
