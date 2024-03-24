@@ -3,14 +3,16 @@ import os
 import re
 from pathlib import Path
 import tabula
+import pandas as pd
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
+from sqlalchemy import select, Result
 
 from config import stomat_settings
 from crud import write_data, del_data
 from engine import stomat_db
 from func import get_html
-from stomatolog_msk_1.models_stomatology import StomatBase
+from stomatolog_msk_1.models_stomatology import StomatBase, Stomat
 import undetected_chromedriver as uc
 
 path = Path(os.path.abspath(__file__)).parent.parent
@@ -494,87 +496,87 @@ async def evklaz(links: list) -> None:
 
 
 dependencies = {
-    # 'https://martirosyan.pro/': {
-    #     'links': ['https://martirosyan.pro/services#!/tab/504070508-1'],
-    #     'process': martirosyan_pro
-    # },
-    # 'https://familydoctor.ru/prices/': {
-    #     'links': [
-    #         'https://familydoctor.ru/prices/stomatologiya/',
-    #         'https://familydoctor.ru/prices/child/stomatologiya/',
-    #         'https://familydoctor.ru/prices/ortopedicheskaya-stomatologiya/',
-    #         'https://familydoctor.ru/prices/hirurgicheskaya-stomatologiya/',
-    #         'https://familydoctor.ru/prices/child/hirurgicheskaya-stomatologiya/'
-    #     ],
-    #     'process': familydoctor
-    # },
-    # 'https://nydc.ru/uslugi-i-tseny/': {
-    #     'links': ['https://nydc.ru/uslugi-i-tseny/'],
-    #     'process': nydc
-    # },
-    # 'https://www.orthodont-elit.ru/price/': {
-    #     'links': ['https://www.orthodont-elit.ru/price/full/'],
-    #     'process': orthodont
-    # },
-    # 'https://www.alfa-clinic.ru': {
-    #     'links': ['https://www.alfa-clinic.ru/czenyi/'],
-    #     'process': alfaclinic
-    # },
-    # 'https://www.dentalfantasy.ru': {
-    #     'links': ['https://www.dentalfantasy.ru/price-list/'],
-    #     'process': dentalfantasy
-    # },
-    # 'https://zub.ru': {
-    #     'links': ['https://zub.ru/price-list/'],
-    #     'process': zub_ru
-    # },
-    # 'https://www.prezi-dent.ru': {
-    #     'links': ['https://www.prezi-dent.ru/frunzenskaya/uslugi-i-tseny'],
-    #     'process': prezi_dent
-    # },
-    # 'https://mositaldent.ru': {
-    #     'links': ['https://mositaldent.ru/tseny'],
-    #     'process': mositaldent
-    # },
-    # 'https://generation.family': {
-    #     'links': ['https://generation.family/division'],
-    #     'process': generation_family
-    # },
-    # 'https://docdent.ru/': {
-    #     'links': ['https://docdent.ru/tseny/'],
-    #     'process': docdent
-    # },
-    # 'https://alfazdrav.ru': {
-    #     'links': ['https://alfazdrav.ru/services/price/'],
-    #     'process': alfazdrav
-    # },
-    # 'https://lcenter.ru': {
-    #     'links': ['https://lcenter.ru/directions/stomatologiya#price'],
-    #     'process': lcenter
-    # },
-    # 'https://slavdent.ru': {
-    #     'links': ['https://slavdent.ru/prices/'],
-    #     'process': slavdent
-    # },
-    # 'https://artdent.ru': {
-    #     'links': [
-    #         'https://artdent.ru/cena2.html',
-    #         'https://artdent.ru/cenaprotes.html',
-    #         'https://artdent.ru/surgery.html',
-    #         'https://artdent.ru/implantology.html',
-    #         'https://artdent.ru/cenaparodont.html',
-    #         'https://artdent.ru/ortodonty.html',
-    #     ],
-    #     'process': artdent
-    # },
-    # 'https://www.drelmar.ru': {
-    #     'links': ['https://www.drelmar.ru/price'],
-    #     'process': drelmar
-    # },
-    # 'https://evklaz-clinik.ru/prajslist': {
-    #     'links': ['https://evklaz-clinik.ru/prajslist'],
-    #     'process': evklaz
-    # }
+    'https://martirosyan.pro/': {
+        'links': ['https://martirosyan.pro/services#!/tab/504070508-1'],
+        'process': martirosyan_pro
+    },
+    'https://familydoctor.ru/prices/': {
+        'links': [
+            'https://familydoctor.ru/prices/stomatologiya/',
+            'https://familydoctor.ru/prices/child/stomatologiya/',
+            'https://familydoctor.ru/prices/ortopedicheskaya-stomatologiya/',
+            'https://familydoctor.ru/prices/hirurgicheskaya-stomatologiya/',
+            'https://familydoctor.ru/prices/child/hirurgicheskaya-stomatologiya/'
+        ],
+        'process': familydoctor
+    },
+    'https://nydc.ru/uslugi-i-tseny/': {
+        'links': ['https://nydc.ru/uslugi-i-tseny/'],
+        'process': nydc
+    },
+    'https://www.orthodont-elit.ru/price/': {
+        'links': ['https://www.orthodont-elit.ru/price/full/'],
+        'process': orthodont
+    },
+    'https://www.alfa-clinic.ru': {
+        'links': ['https://www.alfa-clinic.ru/czenyi/'],
+        'process': alfaclinic
+    },
+    'https://www.dentalfantasy.ru': {
+        'links': ['https://www.dentalfantasy.ru/price-list/'],
+        'process': dentalfantasy
+    },
+    'https://zub.ru': {
+        'links': ['https://zub.ru/price-list/'],
+        'process': zub_ru
+    },
+    'https://www.prezi-dent.ru': {
+        'links': ['https://www.prezi-dent.ru/frunzenskaya/uslugi-i-tseny'],
+        'process': prezi_dent
+    },
+    'https://mositaldent.ru': {
+        'links': ['https://mositaldent.ru/tseny'],
+        'process': mositaldent
+    },
+    'https://generation.family': {
+        'links': ['https://generation.family/division'],
+        'process': generation_family
+    },
+    'https://docdent.ru/': {
+        'links': ['https://docdent.ru/tseny/'],
+        'process': docdent
+    },
+    'https://alfazdrav.ru': {
+        'links': ['https://alfazdrav.ru/services/price/'],
+        'process': alfazdrav
+    },
+    'https://lcenter.ru': {
+        'links': ['https://lcenter.ru/directions/stomatologiya#price'],
+        'process': lcenter
+    },
+    'https://slavdent.ru': {
+        'links': ['https://slavdent.ru/prices/'],
+        'process': slavdent
+    },
+    'https://artdent.ru': {
+        'links': [
+            'https://artdent.ru/cena2.html',
+            'https://artdent.ru/cenaprotes.html',
+            'https://artdent.ru/surgery.html',
+            'https://artdent.ru/implantology.html',
+            'https://artdent.ru/cenaparodont.html',
+            'https://artdent.ru/ortodonty.html',
+        ],
+        'process': artdent
+    },
+    'https://www.drelmar.ru': {
+        'links': ['https://www.drelmar.ru/price'],
+        'process': drelmar
+    },
+    'https://evklaz-clinik.ru/prajslist': {
+        'links': ['https://evklaz-clinik.ru/prajslist'],
+        'process': evklaz
+    }
 }
 
 
@@ -585,3 +587,25 @@ async def work():
         site = dependencies.get(url)
         if site:
             await site.get('process')(links=site.get('links'))
+
+
+async def output():
+    query = select(Stomat.id,
+                   Stomat.company,
+                   Stomat.address,
+                   Stomat.site,
+                   Stomat.category,
+                   Stomat.med_service,
+                   Stomat.price,
+                   Stomat.price_promo).order_by(Stomat.id)
+    async with stomat_db.scoped_session() as session:
+        data: Result = await session.execute(query)
+        result = data.all()
+    df = pd.DataFrame(result)
+    filename = f'{stomat_settings.tablename}.xlsx'
+    writer = pd.ExcelWriter(filename)
+    try:
+        df.to_excel(writer, index=False)
+    finally:
+        writer.close()
+        print(f'Ready')

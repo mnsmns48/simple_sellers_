@@ -5,7 +5,7 @@ from asyncpg import InvalidCatalogNameError
 from engine import stomat_db, create_db
 
 from config import stomat_settings
-from stomatolog_msk_1.logic_stom_1 import work
+from stomatolog_msk_1.logic_stom_1 import work, output
 from stomatolog_msk_1.models_stomatology import Stomat
 
 
@@ -24,7 +24,7 @@ async def main():
 
             await work()
         elif choice == 2:
-            pass
+            await output()
         else:
             print('INCORRECT INPUT')
     except ValueError:
