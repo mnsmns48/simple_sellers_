@@ -2,7 +2,6 @@ import asyncio
 import os
 import re
 from pathlib import Path
-
 import tabula
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
@@ -572,10 +571,10 @@ dependencies = {
     #     'links': ['https://www.drelmar.ru/price'],
     #     'process': drelmar
     # },
-    'https://evklaz-clinik.ru/prajslist': {
-        'links': ['https://evklaz-clinik.ru/prajslist'],
-        'process': evklaz
-    }
+    # 'https://evklaz-clinik.ru/prajslist': {
+    #     'links': ['https://evklaz-clinik.ru/prajslist'],
+    #     'process': evklaz
+    # }
 }
 
 

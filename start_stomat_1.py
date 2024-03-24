@@ -10,18 +10,25 @@ from stomatolog_msk_1.models_stomatology import Stomat
 
 
 async def main():
+    print('PRESS 1 TO PARSE\nPRESS 2 TO OUTPUT RESULT')
     try:
-        # async with stomat_db.engine.begin() as async_connect:
-        #     await async_connect.run_sync(Stomat.metadata.drop_all)
-        # print('Таблица удалена')
-        async with stomat_db.engine.begin() as async_connect:
-            await async_connect.run_sync(Stomat.metadata.create_all)
-    except InvalidCatalogNameError:
-        await create_db(new_db=stomat_settings.database)
-        async with stomat_db.engine.begin() as async_connect:
-            await async_connect.run_sync(Stomat.metadata.create_all)
+        choice = int(input())
+        if choice == 1:
+            try:
+                async with stomat_db.engine.begin() as async_connect:
+                    await async_connect.run_sync(Stomat.metadata.create_all)
+            except InvalidCatalogNameError:
+                await create_db(new_db=stomat_settings.database)
+                async with stomat_db.engine.begin() as async_connect:
+                    await async_connect.run_sync(Stomat.metadata.create_all)
 
-    await work()
+            await work()
+        elif choice == 2:
+            pass
+        else:
+            print('INCORRECT INPUT')
+    except ValueError:
+        print('INCORRECT INPUT!! PRESS 1 OR 2')
 
 
 if __name__ == "__main__":
