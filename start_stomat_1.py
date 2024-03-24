@@ -1,4 +1,5 @@
 import asyncio
+import time
 from datetime import datetime
 from asyncpg import InvalidCatalogNameError
 from engine import stomat_db, create_db
@@ -25,7 +26,9 @@ async def main():
 
 if __name__ == "__main__":
     try:
+        start = time.time()
         print('script started', datetime.now())
         asyncio.run(main())
+        print(f"Скрипт завершен за {int(time.time() - start)} секунд")
     except (KeyboardInterrupt, SystemExit):
         print('script stopped')

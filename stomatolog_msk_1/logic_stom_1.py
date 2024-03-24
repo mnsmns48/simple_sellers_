@@ -3,6 +3,7 @@ import os
 import re
 from pathlib import Path
 
+import tabula
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 
@@ -434,6 +435,65 @@ async def drelmar(links: list) -> None:
                          data=result_dict)
 
 
+async def evklaz(links: list) -> None:
+    result_dict = list()
+    for url in links:
+        html = await get_html(url)
+        soup = BeautifulSoup(markup=html, features='lxml')
+        links = soup.find('table').find_all('a', href=True)
+        hrefs = [f"https://evklaz-clinik.ru{i.get('href')}" for i in links]
+        cat_locs = [7.980000019073486, 16.879968643188477, 9.0, 15.89999771118164]
+        med_locs = [5.519999980926514]
+        for href in hrefs:
+            table = tabula.read_pdf(input_path=href, stream=True, pages='all', output_format="json")
+            category = str()
+            for line in table:
+                data = line.get('data')
+                for i in data:
+                    if len(i) == 2:
+                        height = i[0].get('height')
+                        if height in cat_locs and i[1].get('text') != '':
+                            category = i[0].get('text')
+                        if height in med_locs and i[0].get('height') == i[1].get('height'):
+                            result_dict.append({
+                                'company': 'Медицинский Центр ЭВКЛАЗ',
+                                'address': 'Комсомольский проспект, д. 42, стр. 2, офис 7',
+                                'site': 'https://evklaz-clinik.ru',
+                                'category': category.replace('цена (руб)', ''),
+                                'med_service': i[0].get('text').strip(),
+                                'price': i[1].get('text').strip().strip()
+                            })
+                        elif height == 0.0:
+                            result_dict.append({
+                                'company': 'Медицинский Центр ЭВКЛАЗ',
+                                'address': 'Комсомольский проспект, д. 42, стр. 2, офис 7',
+                                'site': 'https://evklaz-clinik.ru',
+                                'category': category.replace('цена (руб)', ''),
+                                'med_service': f"{data[data.index(i) - 1][0].get('text')} "
+                                               f"{data[data.index(i) + 1][0].get('text')}",
+                                'price': data[data.index(i)][1].get('text')
+                            })
+                    if len(i) == 1:
+                        height = i[0].get('height')
+                        if height in cat_locs:
+                            category = i[0].get('text')
+                        if height in med_locs:
+                            try:
+                                result_dict.append({
+                                    'company': 'Медицинский Центр ЭВКЛАЗ',
+                                    'address': 'Комсомольский проспект, д. 42, стр. 2, офис 7',
+                                    'site': 'https://evklaz-clinik.ru',
+                                    'category': category.replace('цена (руб)', ''),
+                                    'med_service': i[0].get('text').rsplit(' ', 1)[0].strip(),
+                                    'price': i[0].get('text').rsplit(' ', 1)[1].strip()
+                                })
+                            except IndexError:
+                                pass
+    async with stomat_db.scoped_session() as session:
+        await write_data(session=session, table=StomatBase.metadata.tables.get(stomat_settings.tablename),
+                         data=result_dict)
+
+
 dependencies = {
     # 'https://martirosyan.pro/': {
     #     'links': ['https://martirosyan.pro/services#!/tab/504070508-1'],
@@ -508,9 +568,13 @@ dependencies = {
     #     ],
     #     'process': artdent
     # },
-    'https://www.drelmar.ru': {
-        'links': ['https://www.drelmar.ru/price'],
-        'process': drelmar
+    # 'https://www.drelmar.ru': {
+    #     'links': ['https://www.drelmar.ru/price'],
+    #     'process': drelmar
+    # },
+    'https://evklaz-clinik.ru/prajslist': {
+        'links': ['https://evklaz-clinik.ru/prajslist'],
+        'process': evklaz
     }
 }
 
