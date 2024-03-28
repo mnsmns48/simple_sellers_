@@ -30,7 +30,16 @@ class Cian(Settings):
     table_data: str
 
 
+class Altera(Settings):
+    database: str
+    echo: bool
+    table_links: str
+    table_data: str
+    period: int
+
+
 general_settings = Settings(_env_file="general.env")
 dobrotsen_settings = Dobrotsen(_env_file=["general.env", "dobrotsen/dobrotsen.env"])
 stomat_settings = Stomat(_env_file=["general.env", "stomatolog_msk_1/stom.env"])
 cian_settings = Cian(_env_file=["general.env", "cian/cian.env"])
+altera_settings = Altera(_env_file=["general.env", "alterainvest/altera.env"])

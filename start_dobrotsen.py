@@ -3,7 +3,7 @@ from datetime import datetime
 from asyncpg import InvalidCatalogNameError
 from config import dobrotsen_settings
 from engine import dobrotsen_db, create_db
-from dobrotsen.logic import write_dobrotsen_menu, pars_links
+from dobrotsen.logic_dobrotsen import write_dobrotsen_menu, pars_links
 from dobrotsen.models_dobrotsen import DobroBase
 
 
